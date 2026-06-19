@@ -80,7 +80,7 @@ function FifaMatchCard({ match, result, prediction, onClick }) {
   const live = status === 'live';
 
   return (
-    <div className={`fifa-card ${locked ? 'fifa-card-locked' : ''} ${live ? 'fifa-card-live' : ''}`} onClick={() => !locked && onClick?.(match)} style={{ cursor: onClick && !locked ? 'pointer' : 'default' }}>
+    <div className={`fifa-card ${locked ? 'fifa-card-locked' : ''}`} onClick={() => !locked && onClick?.(match)} style={{ cursor: onClick && !locked ? 'pointer' : 'default' }}>
       <div className="fifa-card-header">
         <span className="fifa-card-round">{getGroupLabel(match)}</span>
         {live && <span className="fifa-card-live-tag">🔴 AO VIVO</span>}
@@ -102,7 +102,7 @@ function FifaMatchCard({ match, result, prediction, onClick }) {
               <img src={getBadgeUrl(match.homeTeam)} alt={homeName} loading="lazy" />
             </div>
             <span className="fifa-card-team-name">{homeName}</span>
-            <div className={`fifa-card-score ${live ? 'fifa-card-score-live' : ''} ${status === 'finished' ? 'fifa-card-score-finished' : ''}`}>
+            <div className="fifa-card-score">
               {status !== 'scheduled' ? homeScore : '-'}
             </div>
           </div>
@@ -112,7 +112,7 @@ function FifaMatchCard({ match, result, prediction, onClick }) {
               <img src={getBadgeUrl(match.awayTeam)} alt={awayName} loading="lazy" />
             </div>
             <span className="fifa-card-team-name">{awayName}</span>
-            <div className={`fifa-card-score ${live ? 'fifa-card-score-live' : ''} ${status === 'finished' ? 'fifa-card-score-finished' : ''}`}>
+            <div className="fifa-card-score">
               {status !== 'scheduled' ? awayScore : '-'}
             </div>
           </div>

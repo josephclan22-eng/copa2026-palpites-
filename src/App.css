@@ -2301,12 +2301,6 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   margin-left: auto;
-  animation: fifaLivePulse 1.5s ease-in-out infinite;
-}
-
-@keyframes fifaLivePulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
 }
 
 .fifa-card-lock-tag {
@@ -2322,18 +2316,16 @@ body {
 }
 
 .fifa-card-live {
-  border-color: #df1c3c !important;
-  box-shadow: 0 0 20px rgba(223,28,60,0.2);
+  border-color: var(--border) !important;
 }
 
 .live-timer {
-  background: #df1c3c;
-  color: #fff;
+  background: var(--bg-hover);
+  color: var(--green-light);
   padding: 2px 8px;
   border-radius: 4px;
   font-size: 0.65rem;
   font-weight: 700;
-  animation: fifaLivePulse 1.5s ease-in-out infinite;
 }
 
 .fifa-card-body {
@@ -2428,8 +2420,8 @@ body {
 }
 
 .fifa-card-score-live {
-  background: var(--red);
-  color: #fff;
+  background: var(--bg-hover);
+  color: var(--green-light);
 }
 
 .fifa-card-location {
