@@ -14,7 +14,7 @@ function BrazilBanner({ match, onClose }) {
       <button className="brazil-banner-close" onClick={onClose}>✕</button>
       <div className="brazil-banner-content">
         <div className="brazil-banner-flags">
-          <img src={getFlagUrl('BRA')} alt="Brasil" className="brazil-banner-flag" />
+          <img src={getFlagUrl('BR')} alt="Brasil" className="brazil-banner-flag" />
           <span className="brazil-banner-vs">VS</span>
           <img src={getFlagUrl(oppData?.code)} alt={oppName} className="brazil-banner-flag" />
         </div>
@@ -71,6 +71,16 @@ function Dashboard({ users, predictions, matches, currentUser, matchResults, onT
     <div className="dashboard">
       {brazilMatch && !brazilDismissed && currentUser && (
         <BrazilBanner match={brazilMatch} onClose={handleDismissBanner} />
+      )}
+      {currentUser && sorted.length >= 3 && (
+        <div className="top3-banner">
+          <span className="top3-icon">🏆</span>
+          <span className="top3-text">
+            <strong>1º {sorted[0][0]}</strong> ({sorted[0][1]} pts) &nbsp;|&nbsp;
+            <strong>2º {sorted[1][0]}</strong> ({sorted[1][1]} pts) &nbsp;|&nbsp;
+            <strong>3º {sorted[2][0]}</strong> ({sorted[2][1]} pts)
+          </span>
+        </div>
       )}
       {currentUser && (
         <>

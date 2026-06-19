@@ -2842,8 +2842,8 @@ body {
 .brazil-banner {
   background: linear-gradient(135deg, #009739 0%, #002776 50%, #FFDF00 100%);
   border-radius: var(--radius);
-  padding: 16px 20px;
-  margin-bottom: 20px;
+  padding: 26px 32px;
+  margin-bottom: 24px;
   position: relative;
   overflow: hidden;
 }
@@ -2862,16 +2862,16 @@ body {
 }
 .brazil-banner-close {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 12px;
+  right: 12px;
   background: rgba(0,0,0,0.3);
   border: none;
   color: #fff;
-  width: 28px;
-  height: 28px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 1.4rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2883,52 +2883,52 @@ body {
 .brazil-banner-content {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 32px;
 }
 .brazil-banner-flags {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   flex-shrink: 0;
 }
 .brazil-banner-flag {
-  width: 48px;
-  height: 48px;
+  width: 80px;
+  height: 80px;
   object-fit: contain;
-  border-radius: 6px;
+  border-radius: 10px;
   background: rgba(255,255,255,0.2);
-  padding: 4px;
+  padding: 6px;
 }
 .brazil-banner-vs {
   font-weight: 700;
-  font-size: 0.8rem;
+  font-size: 1.3rem;
   color: rgba(255,255,255,0.8);
 }
 .brazil-banner-info {
   flex: 1;
 }
 .brazil-banner-info h3 {
-  margin: 0 0 4px;
-  font-size: 1.2rem;
+  margin: 0 0 6px;
+  font-size: 1.9rem;
   color: #fff;
   font-family: var(--font-display);
   letter-spacing: 1px;
 }
 .brazil-banner-match {
-  font-size: 1rem;
+  font-size: 1.6rem;
   color: rgba(255,255,255,0.95);
-  margin: 0 0 2px;
+  margin: 0 0 4px;
 }
 .brazil-banner-details {
-  font-size: 0.8rem;
+  font-size: 1.3rem;
   color: rgba(255,255,255,0.7);
-  margin: 0 0 6px;
+  margin: 0 0 10px;
 }
 .brazil-banner-message {
-  font-size: 0.9rem;
+  font-size: 1.4rem;
   color: rgba(255,255,255,0.9);
   margin: 0;
-  line-height: 1.4;
+  line-height: 1.5;
 }
 @media (max-width: 600px) {
   .brazil-banner-content {
@@ -2936,6 +2936,33 @@ body {
     text-align: center;
   }
   .brazil-banner-info h3 {
-    font-size: 1rem;
+    font-size: 1.4rem;
   }
+  .brazil-banner-flag {
+    width: 56px;
+    height: 56px;
+  }
+}
+
+.top3-banner {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  border: 2px solid var(--yellow);
+  border-radius: var(--radius);
+  padding: 16px 24px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.top3-icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+.top3-text {
+  font-size: 1rem;
+  color: var(--text);
+  line-height: 1.5;
+}
+.top3-text strong {
+  color: var(--yellow);
 }
