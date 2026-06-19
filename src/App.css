@@ -2839,7 +2839,103 @@ body {
   margin-top: 1rem;
   max-width: 400px;
 }
-.admin-reset-msg {
+.brazil-banner {
+  background: linear-gradient(135deg, #009739 0%, #002776 50%, #FFDF00 100%);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+}
+.brazil-banner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 20px,
+    rgba(255,255,255,0.05) 20px,
+    rgba(255,255,255,0.05) 40px
+  );
+  pointer-events: none;
+}
+.brazil-banner-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0,0,0,0.3);
+  border: none;
+  color: #fff;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
   font-size: 0.9rem;
-  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+.brazil-banner-close:hover {
+  background: rgba(0,0,0,0.5);
+}
+.brazil-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.brazil-banner-flags {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.brazil-banner-flag {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.2);
+  padding: 4px;
+}
+.brazil-banner-vs {
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.8);
+}
+.brazil-banner-info {
+  flex: 1;
+}
+.brazil-banner-info h3 {
+  margin: 0 0 4px;
+  font-size: 1.2rem;
+  color: #fff;
+  font-family: var(--font-display);
+  letter-spacing: 1px;
+}
+.brazil-banner-match {
+  font-size: 1rem;
+  color: rgba(255,255,255,0.95);
+  margin: 0 0 2px;
+}
+.brazil-banner-details {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.7);
+  margin: 0 0 6px;
+}
+.brazil-banner-message {
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.9);
+  margin: 0;
+  line-height: 1.4;
+}
+@media (max-width: 600px) {
+  .brazil-banner-content {
+    flex-direction: column;
+    text-align: center;
+  }
+  .brazil-banner-info h3 {
+    font-size: 1rem;
+  }
 }

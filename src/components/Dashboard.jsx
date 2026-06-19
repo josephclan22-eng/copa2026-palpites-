@@ -1,7 +1,53 @@
+import { useState } from 'react';
 import { calculateAllPoints } from '../data/scoring';
 import teams, { getFlagUrl } from '../data/teams';
 
+function BrazilBanner({ match, onClose }) {
+  const isHome = match.homeTeam === 'BRASIL';
+  const opponent = isHome ? match.awayTeam : match.homeTeam;
+  const oppData = teams[opponent];
+  const oppName = oppData?.name || opponent;
+  const venue = match.venue || '';
+
+  return (
+    <div className="brazil-banner">
+      <button className="brazil-banner-close" onClick={onClose}>✕</button>
+      <div className="brazil-banner-content">
+        <div className="brazil-banner-flags">
+          <img src={getFlagUrl('BRA')} alt="Brasil" className="brazil-banner-flag" />
+          <span className="brazil-banner-vs">VS</span>
+          <img src={getFlagUrl(oppData?.code)} alt={oppName} className="brazil-banner-flag" />
+        </div>
+        <div className="brazil-banner-info">
+          <h3>🇧🇷 HOJE TEM JOGO DO BRASIL! 🇧🇷</h3>
+          <p className="brazil-banner-match">
+            <strong>Brasil</strong> x <strong>{oppName}</strong>
+          </p>
+          <p className="brazil-banner-details">{match.time} • {venue}</p>
+          <p className="brazil-banner-message">
+            Vamos vencer e fazer bonito! 🙌📢<br />
+            Faça seu palpite e torça junto!
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Dashboard({ users, predictions, matches, currentUser, matchResults, onTabChange, standings }) {
+  const [brazilDismissed, setBrazilDismissed] = useState(() => !!sessionStorage.getItem('brazilBannerDismissed'));
+
+  const today = new Date();
+  const todayStr = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}`;
+  const brazilMatch = matches.find(m =>
+    (m.homeTeam === 'BRASIL' || m.awayTeam === 'BRASIL') &&
+    m.date === todayStr
+  );
+
+  const handleDismissBanner = () => {
+    sessionStorage.setItem('brazilBannerDismissed', '1');
+    setBrazilDismissed(true);
+  };
   const userPoints = calculateAllPoints(predictions, matches.map(m => ({
     ...m,
     ...(matchResults[m.id] || {}),
@@ -23,6 +69,9 @@ function Dashboard({ users, predictions, matches, currentUser, matchResults, onT
 
   return (
     <div className="dashboard">
+      {brazilMatch && !brazilDismissed && currentUser && (
+        <BrazilBanner match={brazilMatch} onClose={handleDismissBanner} />
+      )}
       {currentUser && (
         <>
           <div className="dashboard-welcome">
