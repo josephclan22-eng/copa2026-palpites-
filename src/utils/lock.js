@@ -1,4 +1,4 @@
-const LOCK_MINUTES = -10;
+const LOCK_MINUTES = 10;
 
 function getMatchTimestamp(match) {
   const [day, month] = match.date.split('/');
