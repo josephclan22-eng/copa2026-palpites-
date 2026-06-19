@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { validateEmailDomain } from '../utils/email';
+import { supabase } from '../lib/supabase';
 import Avatar from './Avatar';
 
 function Header({ currentUser, onLogin, onRegister, onLogout, onUpdateProfile, tab, onTabChange }) {
@@ -7,10 +8,15 @@ function Header({ currentUser, onLogin, onRegister, onLogout, onUpdateProfile, t
   const [mode, setMode] = useState('login');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [loginEmail, setLoginEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const menuRef = useRef(null);
+
+  const [recoveryEmail, setRecoveryEmail] = useState('');
+  const [recoveryMsg, setRecoveryMsg] = useState('');
+  const [recoveryLoading, setRecoveryLoading] = useState(false);
 
   useEffect(() => {
     const handleClick = (e) => {
@@ -27,18 +33,21 @@ function Header({ currentUser, onLogin, onRegister, onLogout, onUpdateProfile, t
   const resetForm = () => {
     setName('');
     setEmail('');
+    setLoginEmail('');
     setPassword('');
     setConfirmPassword('');
     setError('');
     setGender('masculino');
+    setRecoveryEmail('');
+    setRecoveryMsg('');
   };
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
-    if (!name.trim()) { setError('Digite seu nome'); return; }
+    if (!loginEmail.trim()) { setError('Digite seu email'); return; }
     if (!password) { setError('Digite sua senha'); return; }
-    const result = await onLogin(name.trim(), password);
+    const result = await onLogin(loginEmail.trim(), password);
     if (result?.error) { setError(result.error); return; }
     resetForm();
     setShowLogin(false);
@@ -59,12 +68,26 @@ function Header({ currentUser, onLogin, onRegister, onLogout, onUpdateProfile, t
     setShowLogin(false);
   };
 
+  const handleRecovery = async (e) => {
+    e.preventDefault();
+    setRecoveryMsg('');
+    if (!recoveryEmail.trim()) { setRecoveryMsg('Digite seu email'); return; }
+    setRecoveryLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(recoveryEmail.trim(), {
+      redirectTo: window.location.origin,
+    });
+    setRecoveryLoading(false);
+    if (error) {
+      setRecoveryMsg(error.message);
+    } else {
+      setRecoveryMsg('Email enviado! Verifique sua caixa de entrada.');
+      setTimeout(() => { setShowLogin(false); resetForm(); }, 3000);
+    }
+  };
+
   const [gender, setGender] = useState('masculino');
   const [showProfile, setShowProfile] = useState(false);
   const [avatarUrlInput, setAvatarUrlInput] = useState('');
-  const [recoveryEmail, setRecoveryEmail] = useState('');
-  const [recoveryMsg, setRecoveryMsg] = useState('');
-  const [recoveryLoading, setRecoveryLoading] = useState(false);
   const [profileMsg, setProfileMsg] = useState('');
 
   useEffect(() => {
@@ -110,43 +133,18 @@ function Header({ currentUser, onLogin, onRegister, onLogout, onUpdateProfile, t
     reader.readAsDataURL(file);
   };
 
-  const handleRecovery = async (e) => {
-    e.preventDefault();
-    setRecoveryMsg('');
-    if (!recoveryEmail.trim()) { setRecoveryMsg('Digite seu email'); return; }
-    setRecoveryLoading(true);
-    try {
-      const res = await fetch('/api/forgot-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: recoveryEmail.trim(), newPassword: '123' }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setRecoveryMsg(`Senha redefinida para "123"! Faça login com seu nome de usuário.`);
-        setTimeout(() => { setShowLogin(false); resetForm(); }, 4000);
-      } else {
-        setRecoveryMsg(data.error || 'Email não encontrado');
-      }
-    } catch {
-      setRecoveryMsg('Erro ao conectar com servidor');
-    }
-    setRecoveryLoading(false);
-  };
-
   const switchMode = (newMode) => {
     setMode(newMode);
     setError('');
     setRecoveryMsg('');
   };
 
-  const isAdmin = currentUser?.isAdmin;
+  const isAdmin = currentUser?.is_admin;
 
   const navItems = [
     { id: 'dashboard', icon: '📊', label: 'Painel' },
     { id: 'matches', icon: '⚽', label: 'Jogos' },
     { id: 'standings', icon: '📋', label: 'Grupos' },
-    { id: 'news', icon: '📰', label: 'Notícias' },
     { id: 'leaderboard', icon: '🏅', label: 'Ranking' },
     ...(isAdmin ? [{ id: 'admin', icon: '⚙️', label: 'Admin' }] : []),
   ];
@@ -206,8 +204,8 @@ function Header({ currentUser, onLogin, onRegister, onLogout, onUpdateProfile, t
                 <form className="login-form" onSubmit={handleLogin}>
                   <h4 className="login-title">Entrar</h4>
                   {error && <p className="login-error">{error}</p>}
-                  <input type="text" placeholder="Nome" value={name}
-                    onChange={(e) => setName(e.target.value)} autoFocus maxLength={30} className="login-input" />
+                  <input type="email" placeholder="Email" value={loginEmail}
+                    onChange={(e) => setLoginEmail(e.target.value)} autoFocus className="login-input" />
                   <input type="password" placeholder="Senha" value={password}
                     onChange={(e) => setPassword(e.target.value)} className="login-input" />
                   <button type="button" className="login-link forgot-password"
@@ -224,14 +222,14 @@ function Header({ currentUser, onLogin, onRegister, onLogout, onUpdateProfile, t
                 <form className="login-form" onSubmit={handleRecovery}>
                   <h4 className="login-title">Recuperar Senha</h4>
                   {recoveryMsg && (
-                    <p className={`login-msg ${recoveryMsg.includes('redefinida') ? 'success' : ''}`}>
+                    <p className={`login-msg ${recoveryMsg.includes('enviado') ? 'success' : ''}`}>
                       {recoveryMsg}
                     </p>
                   )}
                   <input type="email" placeholder="Seu email de cadastro" value={recoveryEmail}
                     onChange={(e) => setRecoveryEmail(e.target.value)} autoFocus className="login-input" />
                   <button type="submit" className="login-submit" disabled={recoveryLoading}>
-                    {recoveryLoading ? 'Recuperando...' : 'Recuperar Senha'}
+                    {recoveryLoading ? 'Enviando...' : 'Enviar link de recuperação'}
                   </button>
                   <p className="login-hint">
                     <button type="button" className="login-link" onClick={() => switchMode('login')}>

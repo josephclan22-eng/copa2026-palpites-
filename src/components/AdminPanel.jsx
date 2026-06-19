@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import teams, { groups, stageLabels, getFlagUrl } from '../data/teams';
 import { isMatchLocked } from '../utils/lock';
 
-function AdminPanel({ matches, matchResults, onUpdateResult, users, predictions, syncState, onSync, setAdminStatus, removeUser, onResetAll, resetPassword, currentUser }) {
+function AdminPanel({ matches, matchResults, onUpdateResult, users, predictions, syncState, onSync, setAdminStatus, removeUser, onResetAll, currentUser }) {
   const [adminTab, setAdminTab] = useState('jogos');
   const [selectedGroup, setSelectedGroup] = useState('');
   const [selectedStage, setSelectedStage] = useState('');
@@ -103,7 +103,6 @@ function AdminPanel({ matches, matchResults, onUpdateResult, users, predictions,
           currentUser={currentUser}
           setAdminStatus={setAdminStatus}
           removeUser={removeUser}
-          resetPassword={resetPassword}
           onResetAll={onResetAll}
         />
       )}
@@ -111,29 +110,9 @@ function AdminPanel({ matches, matchResults, onUpdateResult, users, predictions,
   );
 }
 
-function AdminUsers({ users, currentUser, setAdminStatus, removeUser, resetPassword, onResetAll }) {
+function AdminUsers({ users, currentUser, setAdminStatus, removeUser, onResetAll }) {
   const [confirmRemove, setConfirmRemove] = useState(null);
   const [confirmResetAll, setConfirmResetAll] = useState(false);
-  const [resetTarget, setResetTarget] = useState('');
-  const [resetNewPass, setResetNewPass] = useState('');
-  const [resetMsg, setResetMsg] = useState('');
-
-  const handleResetPassword = async () => {
-    setResetMsg('');
-    if (!resetTarget || !resetNewPass || resetNewPass.length < 3) {
-      setResetMsg('Preencha todos os campos. Senha deve ter no mínimo 3 caracteres.');
-      return;
-    }
-    const result = await resetPassword(currentUser?.name, resetTarget, resetNewPass);
-    if (result.success) {
-      setResetMsg(`✅ ${result.message}`);
-      setResetTarget('');
-      setResetNewPass('');
-    } else {
-      setResetMsg(`❌ ${result.error || 'Erro ao redefinir senha'}`);
-    }
-    setTimeout(() => setResetMsg(''), 4000);
-  };
 
   return (
     <div className="admin-users-section">
@@ -202,18 +181,6 @@ function AdminUsers({ users, currentUser, setAdminStatus, removeUser, resetPassw
         </table>
       </div>
 
-      <div className="admin-reset-section">
-        <h3 className="admin-users-title">Redefinir Senha de Usuário</h3>
-        <p className="admin-users-info">Digite o nome do usuário e a nova senha.</p>
-        <div className="admin-reset-form">
-          <input type="text" placeholder="Nome do usuário" value={resetTarget}
-            onChange={(e) => setResetTarget(e.target.value)} className="login-input" />
-          <input type="password" placeholder="Nova senha (mín. 3 caracteres)" value={resetNewPass}
-            onChange={(e) => setResetNewPass(e.target.value)} className="login-input" />
-          <button className="login-submit" onClick={handleResetPassword}>Redefinir Senha</button>
-          {resetMsg && <p className="admin-reset-msg">{resetMsg}</p>}
-        </div>
-      </div>
     </div>
   );
 }
