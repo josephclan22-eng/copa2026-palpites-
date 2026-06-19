@@ -80,13 +80,36 @@ function Dashboard({ users, predictions, matches, currentUser, matchResults, onT
         <BrazilBanner match={brazilMatch} onClose={handleDismissBanner} />
       )}
       {currentUser && sorted.length >= 3 && (
-        <div className="top3-banner">
-          <span className="top3-icon">🏆</span>
-          <span className="top3-text">
-            <strong>1º {sorted[0][0]}</strong> ({sorted[0][1]} pts) &nbsp;|&nbsp;
-            <strong>2º {sorted[1][0]}</strong> ({sorted[1][1]} pts) &nbsp;|&nbsp;
-            <strong>3º {sorted[2][0]}</strong> ({sorted[2][1]} pts)
-          </span>
+        <div className="top3-section">
+          <div className="top3-header">
+            <span className="top3-crown">👑</span>
+            <h2>PODIUM</h2>
+            <span className="top3-crown">👑</span>
+          </div>
+          <div className="top3-podium">
+            <div className="top3-item top3-second">
+              <div className="top3-medal">🥈</div>
+              <div className="top3-avatar">{sorted[1][0].charAt(0).toUpperCase()}</div>
+              <div className="top3-name">{sorted[1][0]}</div>
+              <div className="top3-pts">{sorted[1][1]} pts</div>
+              <div className="top3-bar second-bar">2º</div>
+            </div>
+            <div className="top3-item top3-first">
+              <div className="top3-medal">🥇</div>
+              <div className="top3-crown-icon">👑</div>
+              <div className="top3-avatar first-avatar">{sorted[0][0].charAt(0).toUpperCase()}</div>
+              <div className="top3-name first-name">{sorted[0][0]}</div>
+              <div className="top3-pts first-pts">{sorted[0][1]} pts</div>
+              <div className="top3-bar first-bar">1º</div>
+            </div>
+            <div className="top3-item top3-third">
+              <div className="top3-medal">🥉</div>
+              <div className="top3-avatar">{sorted[2][0].charAt(0).toUpperCase()}</div>
+              <div className="top3-name">{sorted[2][0]}</div>
+              <div className="top3-pts">{sorted[2][1]} pts</div>
+              <div className="top3-bar third-bar">3º</div>
+            </div>
+          </div>
         </div>
       )}
       {currentUser && (
