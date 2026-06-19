@@ -183,7 +183,7 @@ function Header({ currentUser, onLogin, onRegister, onLogout, onUpdateProfile, t
                   <input type="password" placeholder="Senha" value={password}
                     onChange={(e) => setPassword(e.target.value)} className="login-input" />
                   <button type="button" className="login-link forgot-password"
-                    onClick={() => setError('Contate um administrador para redefinir sua senha')}>
+                    onClick={() => setError('Peça ao administrador para redefinir sua senha no painel Admin > Usuários')}>
                     Esqueci a senha?
                   </button>
                   <button type="submit" className="login-submit">Entrar</button>
