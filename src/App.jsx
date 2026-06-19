@@ -138,13 +138,7 @@ function App() {
   const handleSyncResults = useCallback(async () => {
     setSyncState(s => ({ ...s, syncing: true, error: null }));
     try {
-      const syncRes = await fetch('/api/sync-fifa').catch(() => null);
-      if (syncRes && syncRes.ok) {
-        const syncData = await syncRes.json();
-        if (syncData?.results && Object.keys(syncData.results).length > 0) {
-          setMatchResults(prev => ({ ...prev, ...syncData.results }));
-        }
-      }
+      await fetch('/api/sync-fifa').catch(() => {});
       const { data } = await supabase.from('match_results').select('*');
       if (data) {
         const results = {};
@@ -152,10 +146,13 @@ function App() {
           results[r.match_id] = {
             homeScore: r.home_score, awayScore: r.away_score, played: r.played,
             matchTime: r.match_time, matchStatus: r.match_status,
-            homeGoals: r.home_goals, awayGoals: r.away_goals,
           };
         }
-        setMatchResults(results);
+        setMatchResults(prev => {
+          const prevStr = JSON.stringify(prev);
+          const newStr = JSON.stringify(results);
+          return prevStr === newStr ? prev : results;
+        });
       }
       recalculateAllPoints();
       setSyncState({ syncing: false, lastSync: new Date().toISOString(), error: null });
