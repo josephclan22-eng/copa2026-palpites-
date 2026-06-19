@@ -1,5 +1,3 @@
-import { readFileSync, existsSync } from 'fs';
-import { join } from 'path';
 import { ok } from './_db.js';
 
 const FIFA_API = 'https://api.fifa.com/api/v3/calendar/matches?idCompetition=17&idSeason=285023&language=en&count=200';
@@ -26,91 +24,94 @@ function parseLocalDate(str) {
   return `${String(d.getUTCDate()).padStart(2, '0')}/${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
 }
 
-async function loadOurMatches() {
-  try {
-    const dataPath = join(process.cwd(), 'src', 'data', 'matches.js');
-    if (existsSync(dataPath)) {
-      const content = readFileSync(dataPath, 'utf8');
-      const match = content.match(/export\s+default\s+(\[[\s\S]*?\]);/);
-      if (match) {
-        return JSON.parse(match[1].replace(/(\w+):/g, '"$1":').replace(/'/g, '"'));
-      }
-    }
-  } catch {}
-  return [];
+function matchInOurData(fifaMatch, ourMatches) {
+  const homeCode = fifaMatch.Home?.Abbreviation;
+  const awayCode = fifaMatch.Away?.Abbreviation;
+  const ourHome = FIFA_TO_OURS[homeCode];
+  const ourAway = FIFA_TO_OURS[awayCode];
+  if (!ourHome || !ourAway) return null;
+  const dateStr = parseLocalDate(fifaMatch.LocalDate || fifaMatch.Date);
+  return ourMatches.find(m => m.homeTeam === ourHome && m.awayTeam === ourAway && m.date === dateStr) || null;
 }
 
 export default async (req, res) => {
-  if (req.method === 'OPTIONS') { res.status(200).end(); return; }
   const results = {};
   let synced = 0;
-  let error = null;
+  let fifaError = null;
+  let triedFallback = false;
 
+  const supabaseUrl = process.env.VITE_SUPABASE_URL;
+  const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
+
+  // Try the main calendar endpoint
   try {
     const fifaRes = await fetch(FIFA_API, {
-      headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json' },
-      signal: AbortSignal.timeout(8000),
+      headers: { 'User-Agent': 'Mozilla/5.0' },
+      signal: AbortSignal.timeout(10000),
     });
-
     if (fifaRes.ok) {
       const data = await fifaRes.json();
-      const ourMatches = await loadOurMatches();
-      const supabaseUrl = process.env.VITE_SUPABASE_URL;
-      const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
-
+      const { default: ourMatches } = await import('../src/data/matches.js');
       for (const fm of data.Results || []) {
-        const homeCode = fm.Home?.Abbreviation;
-        const awayCode = fm.Away?.Abbreviation;
-        const ourHome = FIFA_TO_OURS[homeCode];
-        const ourAway = FIFA_TO_OURS[awayCode];
-        if (!ourHome || !ourAway) continue;
-
-        const dateStr = parseLocalDate(fm.LocalDate || fm.Date);
-        const match = ourMatches.find(m => m.homeTeam === ourHome && m.awayTeam === ourAway && m.date === dateStr);
+        const match = matchInOurData(fm, ourMatches);
         if (!match) continue;
-
         if (fm.MatchStatus === 0 || fm.MatchStatus === 1) continue;
-
         const homeScore = fm.HomeTeamScore != null ? Number(fm.HomeTeamScore) : null;
         const awayScore = fm.AwayTeamScore != null ? Number(fm.AwayTeamScore) : null;
         const matchTime = fm.MatchTime != null ? Number(fm.MatchTime) : null;
-        const isFinished = fm.MatchStatus === 7 || fm.MatchStatus === 8;
-
-        results[match.id] = {
-          homeScore, awayScore,
-          played: isFinished,
-          matchTime,
-          matchStatus: isFinished ? 'finished' : 'live',
-        };
-
+        if (homeScore == null && matchTime == null) continue;
+        const isFinished = fm.MatchStatus === 7 || fm.MatchStatus === 8 || fm.MatchStatus === 12 || fm.MatchStatus === 13;
+        results[match.id] = { homeScore, awayScore, played: isFinished, matchTime, matchStatus: isFinished ? 'finished' : 'live' };
+        synced++;
         if (supabaseUrl && supabaseKey && (homeScore != null || matchTime != null)) {
           try {
             await fetch(`${supabaseUrl}/rest/v1/match_results`, {
               method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'apikey': supabaseKey,
-                'Authorization': `Bearer ${supabaseKey}`,
-                'Prefer': 'resolution=merge-duplicates',
-              },
-              body: JSON.stringify({
-                match_id: match.id,
-                home_score: homeScore,
-                away_score: awayScore,
-                played: isFinished,
-                match_time: matchTime,
-                match_status: isFinished ? 'finished' : 'live',
-                updated_at: new Date().toISOString(),
-              }),
+              headers: { 'Content-Type': 'application/json', 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Prefer': 'resolution=merge-duplicates' },
+              body: JSON.stringify({ match_id: match.id, home_score: homeScore, away_score: awayScore, played: isFinished, match_time: matchTime, match_status: isFinished ? 'finished' : 'live', updated_at: new Date().toISOString() }),
             });
           } catch {}
         }
-        synced++;
       }
     }
-  } catch (e) {
-    error = e.message;
+  } catch (e) { fifaError = e.message; }
+
+  // If main API returned nothing, try alternative endpoints
+  if (synced === 0) {
+    for (const altUrl of [
+      'https://api.fifa.com/api/v3/calendar/matches?idCompetition=17&idSeason=285023&count=500',
+      'https://api.fifa.com/api/v3/calendar/matches?idCompetition=17&idSeason=255711&language=en&count=200',
+    ]) {
+      try {
+        const altRes = await fetch(altUrl, { headers: { 'User-Agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(8000) });
+        if (!altRes.ok) continue;
+        const altData = await altRes.json();
+        const { default: ourMatches } = await import('../src/data/matches.js');
+        for (const fm of altData.Results || []) {
+          const match = matchInOurData(fm, ourMatches);
+          if (!match || results[match.id]) continue;
+          const homeScore = fm.HomeTeamScore != null ? Number(fm.HomeTeamScore) : null;
+          const awayScore = fm.AwayTeamScore != null ? Number(fm.AwayTeamScore) : null;
+          const matchTime = fm.MatchTime != null ? Number(fm.MatchTime) : null;
+          if (homeScore == null && matchTime == null) continue;
+          const isFinished = fm.MatchStatus === 7 || fm.MatchStatus === 8 || fm.MatchStatus === 12 || fm.MatchStatus === 13;
+          results[match.id] = { homeScore, awayScore, played: isFinished, matchTime, matchStatus: isFinished ? 'finished' : 'live' };
+          synced++;
+          if (supabaseUrl && supabaseKey && (homeScore != null || matchTime != null)) {
+            try {
+              await fetch(`${supabaseUrl}/rest/v1/match_results`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Prefer': 'resolution=merge-duplicates' },
+                body: JSON.stringify({ match_id: match.id, home_score: homeScore, away_score: awayScore, played: isFinished, match_time: matchTime, match_status: isFinished ? 'finished' : 'live', updated_at: new Date().toISOString() }),
+              });
+            } catch {}
+          }
+        }
+        triedFallback = true;
+        if (synced > 0) break;
+      } catch {}
+    }
   }
 
-  ok(res, { success: true, synced, results, error, lastSync: new Date().toISOString() });
+  ok(res, { success: true, synced, results, triedFallback, fifaError, lastSync: new Date().toISOString() });
 };
