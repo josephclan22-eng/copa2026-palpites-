@@ -2840,23 +2840,37 @@ body {
   max-width: 400px;
 }
 .brazil-banner {
-  background: linear-gradient(135deg, #009739 0%, #002776 50%, #FFDF00 100%);
-  border-radius: var(--radius);
-  padding: 26px 32px;
+  border-radius: 16px;
+  padding: 0;
   margin-bottom: 24px;
   position: relative;
   overflow: hidden;
+  min-height: 200px;
+  display: flex;
+  background: linear-gradient(135deg, #009739 0%, #002776 50%, #FFDF00 100%);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
 }
-.brazil-banner::before {
+.brazil-banner-bg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: translate(-50%, -50%);
+  opacity: 0.12;
+  pointer-events: none;
+  filter: blur(1px);
+}
+.brazil-banner::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: repeating-linear-gradient(
-    45deg,
-    transparent,
-    transparent 20px,
-    rgba(255,255,255,0.05) 20px,
-    rgba(255,255,255,0.05) 40px
+  background: linear-gradient(135deg,
+    rgba(0,151,57,0.88) 0%,
+    rgba(0,151,57,0.4) 25%,
+    rgba(0,39,118,0.5) 50%,
+    rgba(255,223,0,0.15) 100%
   );
   pointer-events: none;
 }
@@ -2884,63 +2898,112 @@ body {
   display: flex;
   align-items: center;
   gap: 32px;
+  padding: 24px 32px;
+  width: 100%;
+  z-index: 1;
 }
 .brazil-banner-flags {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
   flex-shrink: 0;
+  z-index: 1;
+}
+.brazil-banner-flag-wrapper {
+  width: 96px;
+  height: 96px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  border: 2px solid rgba(255,255,255,0.25);
 }
 .brazil-banner-flag {
-  width: 80px;
-  height: 80px;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
-  border-radius: 10px;
-  background: rgba(255,255,255,0.2);
-  padding: 6px;
+  border-radius: 8px;
 }
 .brazil-banner-vs {
-  font-weight: 700;
-  font-size: 1.3rem;
-  color: rgba(255,255,255,0.8);
+  font-weight: 800;
+  font-size: 1.4rem;
+  color: #fff;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  z-index: 1;
+  font-family: var(--font-display);
+  letter-spacing: 2px;
 }
 .brazil-banner-info {
   flex: 1;
+  z-index: 1;
+  padding: 24px 32px 24px 0;
 }
 .brazil-banner-info h3 {
-  margin: 0 0 6px;
-  font-size: 1.9rem;
+  margin: 0 0 8px;
+  font-size: 2rem;
   color: #fff;
   font-family: var(--font-display);
-  letter-spacing: 1px;
+  letter-spacing: 2px;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.3);
 }
 .brazil-banner-match {
-  font-size: 1.6rem;
-  color: rgba(255,255,255,0.95);
-  margin: 0 0 4px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 6px;
+}
+.brazil-banner-team-name {
+  font-size: 1.7rem;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+.brazil-banner-x {
+  font-size: 1.5rem;
+  color: rgba(255,255,255,0.5);
+  font-weight: 300;
 }
 .brazil-banner-details {
-  font-size: 1.3rem;
-  color: rgba(255,255,255,0.7);
-  margin: 0 0 10px;
+  font-size: 1.1rem;
+  color: rgba(255,255,255,0.75);
+  margin: 0 0 12px;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.2);
 }
 .brazil-banner-message {
-  font-size: 1.4rem;
+  font-size: 1.3rem;
   color: rgba(255,255,255,0.9);
   margin: 0;
   line-height: 1.5;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.2);
 }
 @media (max-width: 600px) {
+  .brazil-banner {
+    min-height: auto;
+  }
   .brazil-banner-content {
     flex-direction: column;
     text-align: center;
+    padding: 20px;
+  }
+  .brazil-banner-info {
+    padding: 0;
   }
   .brazil-banner-info h3 {
     font-size: 1.4rem;
   }
-  .brazil-banner-flag {
-    width: 56px;
-    height: 56px;
+  .brazil-banner-flag-wrapper {
+    width: 64px;
+    height: 64px;
+  }
+  .brazil-banner-match {
+    justify-content: center;
+  }
+  .brazil-banner-team-name {
+    font-size: 1.2rem;
   }
 }
 

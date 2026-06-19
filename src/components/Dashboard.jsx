@@ -8,25 +8,32 @@ function BrazilBanner({ match, onClose }) {
   const oppData = teams[opponent];
   const oppName = oppData?.name || opponent;
   const venue = match.venue || '';
+  const braData = teams['BRASIL'];
 
   return (
     <div className="brazil-banner">
+      <img src="/brazil-banner-bg.png" alt="" className="brazil-banner-bg" />
       <button className="brazil-banner-close" onClick={onClose}>✕</button>
       <div className="brazil-banner-content">
         <div className="brazil-banner-flags">
-          <img src={getFlagUrl('BR')} alt="Brasil" className="brazil-banner-flag" />
+          <div className="brazil-banner-flag-wrapper">
+            <img src={getFlagUrl(braData?.code, 80)} alt="Brasil" className="brazil-banner-flag" />
+          </div>
           <span className="brazil-banner-vs">VS</span>
-          <img src={getFlagUrl(oppData?.code)} alt={oppName} className="brazil-banner-flag" />
+          <div className="brazil-banner-flag-wrapper">
+            <img src={getFlagUrl(oppData?.code, 80)} alt={oppName} className="brazil-banner-flag" />
+          </div>
         </div>
         <div className="brazil-banner-info">
-          <h3>🇧🇷 HOJE TEM JOGO DO BRASIL! 🇧🇷</h3>
+          <h3>HOJE TEM JOGO DO BRASIL!</h3>
           <p className="brazil-banner-match">
-            <strong>Brasil</strong> x <strong>{oppName}</strong>
+            <span className="brazil-banner-team-name">Brasil</span>
+            <span className="brazil-banner-x">×</span>
+            <span className="brazil-banner-team-name">{oppName}</span>
           </p>
           <p className="brazil-banner-details">{match.time} • {venue}</p>
           <p className="brazil-banner-message">
-            Vamos vencer e fazer bonito! 🙌📢<br />
-            Faça seu palpite e torça junto!
+            Vamos com tudo! Faça seu palpite e torça junto! 🇧🇷🙌
           </p>
         </div>
       </div>
