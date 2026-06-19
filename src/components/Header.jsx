@@ -62,6 +62,9 @@ function Header({ currentUser, onLogin, onRegister, onLogout, onUpdateProfile, t
   const [gender, setGender] = useState('masculino');
   const [showProfile, setShowProfile] = useState(false);
   const [avatarUrlInput, setAvatarUrlInput] = useState('');
+  const [recoveryEmail, setRecoveryEmail] = useState('');
+  const [recoveryMsg, setRecoveryMsg] = useState('');
+  const [recoveryLoading, setRecoveryLoading] = useState(false);
   const [profileMsg, setProfileMsg] = useState('');
 
   useEffect(() => {
@@ -107,9 +110,34 @@ function Header({ currentUser, onLogin, onRegister, onLogout, onUpdateProfile, t
     reader.readAsDataURL(file);
   };
 
+  const handleRecovery = async (e) => {
+    e.preventDefault();
+    setRecoveryMsg('');
+    if (!recoveryEmail.trim()) { setRecoveryMsg('Digite seu email'); return; }
+    setRecoveryLoading(true);
+    try {
+      const res = await fetch('/api/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: recoveryEmail.trim(), newPassword: '123' }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setRecoveryMsg(`Senha redefinida para "123"! Faça login com seu nome de usuário.`);
+        setTimeout(() => { setShowLogin(false); resetForm(); }, 4000);
+      } else {
+        setRecoveryMsg(data.error || 'Email não encontrado');
+      }
+    } catch {
+      setRecoveryMsg('Erro ao conectar com servidor');
+    }
+    setRecoveryLoading(false);
+  };
+
   const switchMode = (newMode) => {
     setMode(newMode);
     setError('');
+    setRecoveryMsg('');
   };
 
   const isAdmin = currentUser?.isAdmin;
@@ -183,13 +211,32 @@ function Header({ currentUser, onLogin, onRegister, onLogout, onUpdateProfile, t
                   <input type="password" placeholder="Senha" value={password}
                     onChange={(e) => setPassword(e.target.value)} className="login-input" />
                   <button type="button" className="login-link forgot-password"
-                    onClick={() => setError('Peça ao administrador para redefinir sua senha no painel Admin > Usuários')}>
+                    onClick={() => switchMode('recovery')}>
                     Esqueci a senha?
                   </button>
                   <button type="submit" className="login-submit">Entrar</button>
                   <p className="login-hint">
                     Não tem conta?{' '}
                     <button type="button" className="login-link" onClick={() => switchMode('register')}>Cadastre-se</button>
+                  </p>
+                </form>
+              ) : mode === 'recovery' ? (
+                <form className="login-form" onSubmit={handleRecovery}>
+                  <h4 className="login-title">Recuperar Senha</h4>
+                  {recoveryMsg && (
+                    <p className={`login-msg ${recoveryMsg.includes('redefinida') ? 'success' : ''}`}>
+                      {recoveryMsg}
+                    </p>
+                  )}
+                  <input type="email" placeholder="Seu email de cadastro" value={recoveryEmail}
+                    onChange={(e) => setRecoveryEmail(e.target.value)} autoFocus className="login-input" />
+                  <button type="submit" className="login-submit" disabled={recoveryLoading}>
+                    {recoveryLoading ? 'Recuperando...' : 'Recuperar Senha'}
+                  </button>
+                  <p className="login-hint">
+                    <button type="button" className="login-link" onClick={() => switchMode('login')}>
+                      Voltar ao login
+                    </button>
                   </p>
                 </form>
               ) : (
