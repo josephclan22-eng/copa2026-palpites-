@@ -138,7 +138,13 @@ function App() {
   const handleSyncResults = useCallback(async () => {
     setSyncState(s => ({ ...s, syncing: true, error: null }));
     try {
-      await fetch('/api/sync-fifa').catch(() => {});
+      const syncRes = await fetch('/api/sync-fifa').catch(() => null);
+      if (syncRes && syncRes.ok) {
+        const syncData = await syncRes.json();
+        if (syncData?.results && Object.keys(syncData.results).length > 0) {
+          setMatchResults(prev => ({ ...prev, ...syncData.results }));
+        }
+      }
       const { data } = await supabase.from('match_results').select('*');
       if (data) {
         const results = {};
