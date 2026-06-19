@@ -2321,6 +2321,21 @@ body {
   cursor: default !important;
 }
 
+.fifa-card-live {
+  border-color: #df1c3c !important;
+  box-shadow: 0 0 20px rgba(223,28,60,0.2);
+}
+
+.live-timer {
+  background: #df1c3c;
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  animation: fifaLivePulse 1.5s ease-in-out infinite;
+}
+
 .fifa-card-body {
   padding: 16px;
   display: flex;

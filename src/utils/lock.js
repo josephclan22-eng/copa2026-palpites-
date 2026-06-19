@@ -1,4 +1,4 @@
-const LOCK_MINUTES = 10;
+const LOCK_SECONDS = 10;
 
 function getMatchTimestamp(match) {
   const [day, month] = match.date.split('/');
@@ -9,7 +9,7 @@ function getMatchTimestamp(match) {
 export function isMatchLocked(match) {
   try {
     const diffMs = getMatchTimestamp(match) - Date.now();
-    return diffMs <= LOCK_MINUTES * 60 * 1000;
+    return diffMs <= LOCK_SECONDS * 1000;
   } catch {
     return false;
   }
@@ -18,9 +18,29 @@ export function isMatchLocked(match) {
 export function getLockTimeRemaining(match) {
   try {
     const diffMs = getMatchTimestamp(match) - Date.now();
-    const diffMinutes = Math.floor(diffMs / 60000);
-    return diffMinutes;
+    const diffSeconds = Math.floor(diffMs / 1000);
+    return diffSeconds;
   } catch {
     return Infinity;
+  }
+}
+
+export function isMatchLive(match, result) {
+  if (!match) return false;
+  if (result?.played) return false;
+  const now = Date.now();
+  const matchTime = getMatchTimestamp(match);
+  const matchEnd = matchTime + 2 * 60 * 60 * 1000;
+  return now >= matchTime && now <= matchEnd;
+}
+
+export function getElapsedMinutes(match) {
+  try {
+    const matchTime = getMatchTimestamp(match);
+    const now = Date.now();
+    if (now < matchTime) return 0;
+    return Math.floor((now - matchTime) / 60000);
+  } catch {
+    return 0;
   }
 }
