@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import './App.css';
 import Header from './components/Header';
 import Dashboard from './components/Dashboard';
@@ -7,68 +7,21 @@ import Leaderboard from './components/Leaderboard';
 import AdminPanel from './components/AdminPanel';
 import StandingsTable from './components/StandingsTable';
 import News from './components/News';
-import Chat from './components/Chat';
 import initialMatches from './data/matches';
 import { resolveAllMatches } from './data/standings';
 import { useStorage } from './hooks/useStorage';
-import { supabase } from './lib/supabase';
+import { syncResults } from './services/api';
 
 function App() {
   const [tab, setTab] = useState('dashboard');
   const [matchResults, setMatchResults] = useState({});
   const [syncState, setSyncState] = useState({ syncing: false, lastSync: null, error: null });
-  const [chatUnread, setChatUnread] = useState(0);
-  const chatLastId = useRef(0);
-
-  const [showResetForm, setShowResetForm] = useState(false);
-  const [newPassword, setNewPassword] = useState('');
-  const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
-  const [resetError, setResetError] = useState('');
-  const [resetSuccess, setResetSuccess] = useState('');
-
-  const handleChatRead = useCallback((lastId) => {
-    chatLastId.current = lastId;
-    setChatUnread(0);
-  }, []);
-
-  useEffect(() => {
-    if (tab === 'chat') { chatLastId.current = 0; setChatUnread(0); }
-  }, [tab]);
-
-  useEffect(() => {
-    const interval = setInterval(async () => {
-      if (tab === 'chat') return;
-      const { data } = await supabase.from('chat_messages').select('id').order('id', { ascending: false }).limit(1);
-      if (data && data[0] && data[0].id > chatLastId.current) {
-        if (chatLastId.current === 0) chatLastId.current = data[0].id;
-        else { const { count } = await supabase.from('chat_messages').select('id', { count: 'exact' }).gt('id', chatLastId.current); if (count) setChatUnread(count); }
-      }
-    }, 8000);
-    return () => clearInterval(interval);
-  }, [tab]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.has('resetAll')) {
       localStorage.clear();
       window.location.href = '/';
-    }
-  }, []);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const hash = window.location.hash;
-    if (params.get('type') === 'recovery' && hash) {
-      const hashParams = new URLSearchParams(hash.substring(1));
-      const accessToken = hashParams.get('access_token');
-      const refreshToken = hashParams.get('refresh_token');
-      if (accessToken) {
-        supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken || '',
-        }).then(() => setShowResetForm(true));
-        window.history.replaceState({}, '', window.location.pathname);
-      }
     }
   }, []);
 
@@ -90,108 +43,61 @@ function App() {
     removeUser,
     updateProfile,
     resetAll,
+    resetPassword,
     loadServerData,
-    recalculateAllPoints,
   } = useStorage();
 
   useEffect(() => {
     loadServerData();
-    const interval = setInterval(loadServerData, 60000);
+    const interval = setInterval(loadServerData, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [loadServerData]);
 
   const curUser = getCurrentUser();
-  const isAdmin = curUser?.is_admin;
+  const isAdmin = curUser?.isAdmin;
   const canViewAdmin = isAdmin;
 
-  const [saveErrors, setSaveErrors] = useState({});
-
-  const handleUpdateResult = useCallback(async (matchId, homeScore, awayScore, extra = {}) => {
-    const hasScore = homeScore !== null && awayScore !== null;
+  const handleUpdateResult = useCallback(async (matchId, homeScore, awayScore) => {
     const newResults = {
       ...matchResults,
-      [matchId]: hasScore
-        ? { homeScore: Number(homeScore), awayScore: Number(awayScore), played: true, ...extra }
+      [matchId]: homeScore !== null && awayScore !== null
+        ? { homeScore: Number(homeScore), awayScore: Number(awayScore), played: true }
         : {},
     };
     setMatchResults(newResults);
-
-    const payload = { match_id: Number(matchId), updated_at: new Date().toISOString() };
-    if (hasScore) {
-      payload.home_score = Number(homeScore);
-      payload.away_score = Number(awayScore);
-      payload.played = true;
-    }
-    if (extra.matchTime !== undefined) payload.match_time = extra.matchTime;
-    if (extra.matchStatus !== undefined) payload.match_status = extra.matchStatus;
-    if (extra.homeGoals !== undefined) payload.home_goals = extra.homeGoals;
-    if (extra.awayGoals !== undefined) payload.away_goals = extra.awayGoals;
-
-    const { error } = await supabase.from('match_results').upsert(payload, { onConflict: 'match_id' });
-    if (error) {
-      setSaveErrors(e => ({ ...e, [matchId]: error.message }));
-      setTimeout(() => setSaveErrors(e => { const n = { ...e }; delete n[matchId]; return n; }), 4000);
-    }
-  }, [matchResults]);
+    try {
+      await fetch('/api/save-results', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminName: curUser?.name, results: newResults }),
+      });
+    } catch {}
+  }, [matchResults, curUser]);
 
   const handleSyncResults = useCallback(async () => {
     setSyncState(s => ({ ...s, syncing: true, error: null }));
     try {
-      await fetch('/api/sync-fifa').catch(() => {});
-      const { data } = await supabase.from('match_results').select('*');
-      if (data) {
-        const results = {};
-        for (const r of data) {
-          results[r.match_id] = {
-            homeScore: r.home_score, awayScore: r.away_score, played: r.played,
-            matchTime: r.match_time, matchStatus: r.match_status,
-            homeGoals: r.home_goals, awayGoals: r.away_goals,
-          };
-        }
-        setMatchResults(results);
+      const data = await syncResults();
+      if (data && data.results && Object.keys(data.results).length > 0) {
+        setMatchResults(prev => {
+          const merged = { ...prev };
+          for (const [id, result] of Object.entries(data.results)) {
+            merged[id] = result;
+          }
+          return merged;
+        });
       }
-      recalculateAllPoints();
-      setSyncState({ syncing: false, lastSync: new Date().toISOString(), error: null });
-    } catch {
-      setSyncState(s => ({ ...s, syncing: false, error: 'Erro ao carregar resultados' }));
+      setSyncState({ syncing: false, lastSync: data?.lastSync || null, error: null });
+    } catch (err) {
+      setSyncState(s => ({ ...s, syncing: false, error: 'Servidor indisponível' }));
     }
   }, []);
 
-  const handleResetPassword = async (e) => {
-    e.preventDefault();
-    setResetError('');
-    setResetSuccess('');
-    if (!newPassword || newPassword.length < 3) {
-      setResetError('Senha deve ter no mínimo 3 caracteres');
-      return;
-    }
-    if (newPassword !== newPasswordConfirm) {
-      setResetError('Senhas não conferem');
-      return;
-    }
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
-    if (error) {
-      setResetError(error.message);
-    } else {
-      setResetSuccess('Senha alterada com sucesso!');
-      setTimeout(() => {
-        setShowResetForm(false);
-        setNewPassword('');
-        setNewPasswordConfirm('');
-      }, 2000);
-    }
-  };
-
   useEffect(() => {
     handleSyncResults();
-    const interval = setInterval(handleSyncResults, 2000);
+    const interval = setInterval(handleSyncResults, 1000);
     return () => clearInterval(interval);
   }, [handleSyncResults]);
-
-  useEffect(() => {
-    const interval = setInterval(recalculateAllPoints, 2000);
-    return () => clearInterval(interval);
-  }, [recalculateAllPoints]);
 
   const effectiveTab = !canViewAdmin && tab === 'admin' ? 'dashboard' : tab;
 
@@ -234,8 +140,6 @@ function App() {
             matches={initialMatches} matchResults={matchResults}
           />
         );
-      case 'chat':
-        return <Chat currentUser={curUser} users={users} onRead={handleChatRead} />;
       case 'news':
         return <News />;
       case 'admin':
@@ -252,8 +156,7 @@ function App() {
             predictions={predictions} standings={standings}
             syncState={syncState} onSync={handleSyncResults}
             setAdminStatus={setAdminStatus} removeUser={removeUser}
-            onResetAll={() => resetAll(curUser?.name)} currentUser={curUser}
-            saveErrors={saveErrors}
+            onResetAll={() => resetAll(curUser?.name)} resetPassword={resetPassword} currentUser={curUser}
           />
         );
       default:
@@ -271,7 +174,6 @@ function App() {
         onUpdateProfile={updateProfile}
         tab={effectiveTab}
         onTabChange={setTab}
-        chatUnread={chatUnread}
       />
       <main className="main-content">
         {renderTab()}
@@ -279,29 +181,6 @@ function App() {
       <footer className="footer">
         <p>🏆 Copa do Mundo 2026 • Bolão de Palpites • Feito para boleiros e boleiras</p>
       </footer>
-
-      {showResetForm && (
-        <div className="reset-overlay">
-          <div className="reset-modal">
-            <h2>Criar Nova Senha</h2>
-            {resetError && <p className="reset-error">{resetError}</p>}
-            {resetSuccess && <p className="reset-success">{resetSuccess}</p>}
-            {!resetSuccess && (
-              <form onSubmit={handleResetPassword}>
-                <input type="password" placeholder="Nova senha (mín. 3 caracteres)"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="reset-input" autoFocus />
-                <input type="password" placeholder="Confirmar nova senha"
-                  value={newPasswordConfirm}
-                  onChange={(e) => setNewPasswordConfirm(e.target.value)}
-                  className="reset-input" />
-                <button type="submit" className="reset-submit">Alterar Senha</button>
-              </form>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

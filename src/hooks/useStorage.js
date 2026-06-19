@@ -8,6 +8,7 @@ const API = {
   setAdmin: '/api/set-admin',
   removeUser: '/api/remove-user',
   clearAll: '/api/clear-all',
+  resetPassword: '/api/reset-password',
   updateProfile: '/api/update-profile',
   sync: '/api/sync',
   validateEmail: '/api/validate-email',
@@ -189,6 +190,15 @@ export function useStorage() {
     }
   }, []);
 
+  const resetPassword = useCallback(async (adminName, targetName, newPassword) => {
+    try {
+      const result = await apiPost(API.resetPassword, { adminName, targetName, newPassword });
+      return result;
+    } catch {
+      return { success: false, error: 'Servidor indisponível' };
+    }
+  }, []);
+
   const loadServerData = useCallback(async () => {
     await loadAllData();
   }, []);
@@ -208,6 +218,7 @@ export function useStorage() {
     getUserPredictions,
     updateProfile,
     resetAll,
+    resetPassword,
     loadServerData,
   };
 }

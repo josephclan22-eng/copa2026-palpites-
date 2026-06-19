@@ -2824,3 +2824,22 @@ body {
   color: #4CAF50;
   margin-bottom: 10px;
 }
+
+.admin-reset-section {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+.admin-reset-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 1rem;
+  max-width: 400px;
+}
+.admin-reset-msg {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}

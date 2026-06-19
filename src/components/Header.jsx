@@ -1,22 +1,16 @@
 import { useState, useRef, useEffect } from 'react';
 import { validateEmailDomain } from '../utils/email';
-import { supabase } from '../lib/supabase';
 import Avatar from './Avatar';
 
-function Header({ currentUser, onLogin, onRegister, onLogout, onUpdateProfile, tab, onTabChange, chatUnread = 0 }) {
+function Header({ currentUser, onLogin, onRegister, onLogout, onUpdateProfile, tab, onTabChange }) {
   const [showLogin, setShowLogin] = useState(false);
   const [mode, setMode] = useState('login');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [loginEmail, setLoginEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const menuRef = useRef(null);
-
-  const [recoveryEmail, setRecoveryEmail] = useState('');
-  const [recoveryMsg, setRecoveryMsg] = useState('');
-  const [recoveryLoading, setRecoveryLoading] = useState(false);
 
   useEffect(() => {
     const handleClick = (e) => {
@@ -33,21 +27,18 @@ function Header({ currentUser, onLogin, onRegister, onLogout, onUpdateProfile, t
   const resetForm = () => {
     setName('');
     setEmail('');
-    setLoginEmail('');
     setPassword('');
     setConfirmPassword('');
     setError('');
     setGender('masculino');
-    setRecoveryEmail('');
-    setRecoveryMsg('');
   };
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
-    if (!loginEmail.trim()) { setError('Digite seu email'); return; }
+    if (!name.trim()) { setError('Digite seu nome'); return; }
     if (!password) { setError('Digite sua senha'); return; }
-    const result = await onLogin(loginEmail.trim(), password);
+    const result = await onLogin(name.trim(), password);
     if (result?.error) { setError(result.error); return; }
     resetForm();
     setShowLogin(false);
@@ -66,23 +57,6 @@ function Header({ currentUser, onLogin, onRegister, onLogout, onUpdateProfile, t
     if (result?.error) { setError(result.error); return; }
     resetForm();
     setShowLogin(false);
-  };
-
-  const handleRecovery = async (e) => {
-    e.preventDefault();
-    setRecoveryMsg('');
-    if (!recoveryEmail.trim()) { setRecoveryMsg('Digite seu email'); return; }
-    setRecoveryLoading(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(recoveryEmail.trim(), {
-      redirectTo: window.location.origin,
-    });
-    setRecoveryLoading(false);
-    if (error) {
-      setRecoveryMsg(error.message);
-    } else {
-      setRecoveryMsg('Email enviado! Verifique sua caixa de entrada.');
-      setTimeout(() => { setShowLogin(false); resetForm(); }, 3000);
-    }
   };
 
   const [gender, setGender] = useState('masculino');
@@ -136,18 +110,16 @@ function Header({ currentUser, onLogin, onRegister, onLogout, onUpdateProfile, t
   const switchMode = (newMode) => {
     setMode(newMode);
     setError('');
-    setRecoveryMsg('');
   };
 
-  const isAdmin = currentUser?.is_admin;
+  const isAdmin = currentUser?.isAdmin;
 
   const navItems = [
     { id: 'dashboard', icon: '📊', label: 'Painel' },
     { id: 'matches', icon: '⚽', label: 'Jogos' },
     { id: 'standings', icon: '📋', label: 'Grupos' },
-    { id: 'leaderboard', icon: '🏅', label: 'Ranking' },
-    { id: 'chat', icon: '💬', label: 'Resenha' },
     { id: 'news', icon: '📰', label: 'Notícias' },
+    { id: 'leaderboard', icon: '🏅', label: 'Ranking' },
     ...(isAdmin ? [{ id: 'admin', icon: '⚙️', label: 'Admin' }] : []),
   ];
 
@@ -206,37 +178,18 @@ function Header({ currentUser, onLogin, onRegister, onLogout, onUpdateProfile, t
                 <form className="login-form" onSubmit={handleLogin}>
                   <h4 className="login-title">Entrar</h4>
                   {error && <p className="login-error">{error}</p>}
-                  <input type="email" placeholder="Email" value={loginEmail}
-                    onChange={(e) => setLoginEmail(e.target.value)} autoFocus className="login-input" />
+                  <input type="text" placeholder="Nome" value={name}
+                    onChange={(e) => setName(e.target.value)} autoFocus maxLength={30} className="login-input" />
                   <input type="password" placeholder="Senha" value={password}
                     onChange={(e) => setPassword(e.target.value)} className="login-input" />
                   <button type="button" className="login-link forgot-password"
-                    onClick={() => switchMode('recovery')}>
+                    onClick={() => setError('Contate um administrador para redefinir sua senha')}>
                     Esqueci a senha?
                   </button>
                   <button type="submit" className="login-submit">Entrar</button>
                   <p className="login-hint">
                     Não tem conta?{' '}
                     <button type="button" className="login-link" onClick={() => switchMode('register')}>Cadastre-se</button>
-                  </p>
-                </form>
-              ) : mode === 'recovery' ? (
-                <form className="login-form" onSubmit={handleRecovery}>
-                  <h4 className="login-title">Recuperar Senha</h4>
-                  {recoveryMsg && (
-                    <p className={`login-msg ${recoveryMsg.includes('enviado') || recoveryMsg.includes('sucesso') ? 'success' : ''}`}>
-                      {recoveryMsg}
-                    </p>
-                  )}
-                  <input type="email" placeholder="Seu email" value={recoveryEmail}
-                    onChange={(e) => setRecoveryEmail(e.target.value)} autoFocus className="login-input" />
-                  <button type="submit" className="login-submit" disabled={recoveryLoading}>
-                    {recoveryLoading ? 'Enviando...' : 'Enviar link de recuperação'}
-                  </button>
-                  <p className="login-hint">
-                    <button type="button" className="login-link" onClick={() => switchMode('login')}>
-                      Voltar ao login
-                    </button>
                   </p>
                 </form>
               ) : (
@@ -282,12 +235,7 @@ function Header({ currentUser, onLogin, onRegister, onLogout, onUpdateProfile, t
             className={`nav-btn ${tab === item.id ? 'active' : ''}`}
             onClick={() => onTabChange(item.id)}
           >
-            <span className="nav-icon">
-              {item.icon}
-              {item.id === 'chat' && chatUnread > 0 && (
-                <span className="chat-badge">{chatUnread}</span>
-              )}
-            </span>
+            <span className="nav-icon">{item.icon}</span>
             <span className="nav-label">{item.label}</span>
           </button>
         ))}
